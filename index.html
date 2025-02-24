@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Índice Hash Estático</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Implementação do Índice Hash Estático</h1>
+  
+  <div>
+    <label for="pageSize">Tamanho da Página:</label>
+    <input type="number" id="pageSize" placeholder="Número de registros por página">
+  </div>
+  
+  <div>
+    <label for="fileInput">Arquivo de Dados:</label>
+    <input type="file" id="fileInput" accept=".txt">
+  </div>
+  
+  <button id="buildIndexBtn">Construir Índice</button>
+  
+  <div>
+    <label for="searchKey">Chave de Busca:</label>
+    <input type="text" id="searchKey" placeholder="Digite a palavra">
+    <button id="searchBtn">Buscar</button>
+    <button id="tableScanBtn">Table Scan</button>
+  </div>
+  
+  <div id="result"></div>
+  
+  <script src="index.js"></script>
+</body>
+</html>
