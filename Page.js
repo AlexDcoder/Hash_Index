@@ -1,7 +1,9 @@
 class Page {
-    constructor(numero, registros) {
-      this.numero = numero;      // Número da página
-      this.registros = registros; // Array de palavras (tuplas)
-    }
+  constructor(numero, registros) {
+    // número que representa a posição da página
+    this.numero = numero;
+    //contém os dados que estarão armazenados nesta página
+    this.registros = registros;
   }
+}
   
