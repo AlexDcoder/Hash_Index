@@ -12,8 +12,11 @@ class HashIndex:
     def __post_init__(self):
         self.buckets = [Bucket(self.bucket_size) for _ in range(self.num_buckets)]
 
-    def funcao_hash(self, chave):
-        return sum(ord(c) for c in chave) % self.num_buckets
+    def funcao_hash(self, chave): 
+        primo_base = 31
+        primo_modulo = 1000003
+        hash_value = sum(primo_base * [ord(c)**7 for c in chave]) % primo_modulo
+        return hash_value % self.num_buckets
 
     def adicionar(self, chave, pagina):
         indice = self.funcao_hash(chave)

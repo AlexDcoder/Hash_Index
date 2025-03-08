@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 import pandas as pd
-from utils.utils import dividir_em_paginas, construir_indice, buscar_com_indice, table_scan, calcular_estatisticas
+from utils.utils import calcular_numero_buckets,dividir_em_paginas, construir_indice, buscar_com_indice, table_scan, calcular_estatisticas
 import plotly.express as px
 
 # Configurações da página
@@ -14,7 +14,8 @@ if 'df_response' not in st.session_state:
     st.session_state.df_response = pd.DataFrame(columns=[
         'page_size', 'bucket_size', 'num_buckets', 'search_value',
         'custo_busca_com_indice', 'tempo_busca_com_indice',
-        'custo_scan', 'tempo_scan', 'taxa_colisoes', 'taxa_overflows'
+        'custo_scan', 'tempo_scan', 'taxa_colisoes', 'taxa_overflows',
+        'status_encontrado'
     ])
     
 
@@ -35,26 +36,28 @@ with st.sidebar:
         with st.form(key='config_form'):
             page_size = st.number_input('Page Size', min_value=1)
             bucket_size = st.number_input('Bucket Size', min_value=1)
-            num_buckets = st.number_input('Number of Buckets', min_value=1)
             col1, col2 = st.columns(2)
             with col1:
-                value = st.text_input('Search Value', 'alan')
+                value = st.text_input('Search Value', 'Alan')
             submit = st.form_submit_button('Submit', use_container_width=True)
     
 if submit:
     # Executando as funções após a submissão do primeiro formulário
     paginas = dividir_em_paginas(palavras, page_size)
+    num_buckets = calcular_numero_buckets(len(palavras), bucket_size)
     indice = construir_indice(paginas, num_buckets, bucket_size)
 
     busca = buscar_com_indice(indice, value)
     scan = table_scan(paginas, value)
     stats = calcular_estatisticas(indice, len(palavras))
-
+    encontrado = True
+    
     with st.sidebar:
         if busca['entry']:
             st.success(f"Chave encontrada na página {busca['entry']['pagina']} ✅")
         else:
             st.error("Chave não encontrada ❌")
+            encontrado = False
 
         st.text(f"Custo de busca (com índice): {busca['custo']}")
         st.text(f"Tempo de busca (com índice): {busca['tempo']:.6f} seg")
@@ -75,7 +78,8 @@ if submit:
         'custo_scan': [scan['custo']],
         'tempo_scan': [scan['tempo']],
         'taxa_colisoes': [stats['taxaColisao']],
-        'taxa_overflows': [stats['taxaOverflow']]
+        'taxa_overflows': [stats['taxaOverflow']],
+        'status_encontrado': True if encontrado else False
     }
 
     novo_df = pd.DataFrame(response)
@@ -89,7 +93,7 @@ with st.sidebar:
         selected_submit = st.form_submit_button('Search', use_container_width=True)
 
 with st.expander('Performance', icon='📊'):
-    st.dataframe(st.session_state.df_response)
+    st.dataframe(st.session_state.df_response, use_container_width=True, hide_index=True)
 
 
 if selected_submit:
@@ -112,13 +116,14 @@ if selected_submit:
                 x= df_selected_performance.index,
                 y=['scan_performance', 'indice_performance'],
                 title='Comparação de Desempenho',
-                log_y=True
+                log_y=True, markers=True
             )
         )
     with col4:
         with st.expander('_**Comparação de Desempenho**_', icon='💾'):
             st.dataframe(df_selected.reset_index().drop('index', axis=1)[
-                ['search_value', 'page_size', 'bucket_size', 'num_buckets']])
+                ['search_value', 'page_size', 'bucket_size', 'num_buckets']],
+                use_container_width=True)
         col5, col6 = st.columns(2)
         col7, col8 = st.columns(2)
         with col5:
@@ -126,31 +131,32 @@ if selected_submit:
                 label='Média de Colisões',
                 value=f'{df_selected["taxa_colisoes"].mean():.2f}%',
                 border=True,
-                delta=f'+{df_selected["taxa_colisoes"].std():.2f}%',
-                delta_color='off'
+                delta=f'{df_selected["taxa_colisoes"].std():.2f}%'\
+                    if df_selected["taxa_overflows"].std() != 0 else None,
             )
         with col6:
             st.metric(
                 label='Média de Overflows',
                 value=f'{df_selected["taxa_overflows"].mean():.2f}%',
                 border=True,
-                delta=f'+{df_selected["taxa_overflows"].std():.2f}%',
-                delta_color='off'
+                delta=f'{df_selected["taxa_overflows"].std():.2f}%' \
+                    if df_selected["taxa_overflows"].std() != 0 else None,
             )
         with col7:
             st.metric(
                 label='Média de Scan',
                 value=f'{df_selected_performance["scan_performance"].mean():.2f}',
                 border=True,
-                delta=f'+{df_selected_performance["scan_performance"].std():.2f}',
-                delta_color='off'
+                delta=f'{df_selected_performance["scan_performance"].std():.2f}' \
+                    if df_selected_performance["scan_performance"].std() != 0 else None,
             )
         with col8:
             st.metric(
                 label='Média de Busca',
                 value=f'{df_selected_performance["indice_performance"].mean():.2f}',
                 border=True,
-                delta=f'+{df_selected_performance["indice_performance"].std():.2f}',
-                delta_color='off')
+                delta=f'{df_selected_performance["indice_performance"].std():.2f}' \
+                    if df_selected["taxa_overflows"].std() != 0 else None,
+                )
 
     
