@@ -8,8 +8,13 @@ def calcular_numero_buckets(num_tuplas: int, num_tuplas_bucket: int) -> int:
         Calcular o número de buckets necessários para a criação do índice hash,
         considerando o número de tuplas e o número de tuplas por bucket.
     '''
-    total_buckets = (num_tuplas // num_tuplas_bucket) + 1
-    return  total_buckets if total_buckets % 1 == 0 else math.ceil(total_buckets)
+    if num_tuplas == 0:
+        return 1  #Pelo menos um bucket deve existir
+
+    return math.ceil(num_tuplas / num_tuplas_bucket)
+
+    #total_buckets = (num_tuplas // num_tuplas_bucket) + 1
+    #return  total_buckets if total_buckets % 1 == 0 else math.ceil(total_buckets)
 
 
 def dividir_em_paginas(palavras: UploadedFile, tamanho_pagina: int) -> list[Page]:
