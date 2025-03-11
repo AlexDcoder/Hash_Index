@@ -50,7 +50,8 @@ def buscar_com_indice(indice: HashIndex, chave: str) -> dict[str, any]:
     '''
     inicio = perf_counter()
     entry = indice.buscar(chave)
-    custo = 2
+    #custo = 2
+    custo = 1 + len(indice.buckets[indice.funcao_hash(chave)].entries) / 2
     fim = perf_counter()
     return {"entry": entry, "custo": custo, "tempo": fim - inicio}
 
