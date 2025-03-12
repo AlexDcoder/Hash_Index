@@ -16,7 +16,6 @@ def calcular_numero_buckets(num_tuplas: int, num_tuplas_bucket: int) -> int:
     #total_buckets = (num_tuplas // num_tuplas_bucket) + 1
     #return  total_buckets if total_buckets % 1 == 0 else math.ceil(total_buckets)
 
-
 def dividir_em_paginas(palavras: UploadedFile, tamanho_pagina: int) -> list[Page]:
     '''
         Usar informações do arquivo e criar uma lista de páginas com um tamanho específico
@@ -50,8 +49,10 @@ def buscar_com_indice(indice: HashIndex, chave: str) -> dict[str, any]:
     '''
     inicio = perf_counter()
     entry = indice.buscar(chave)
-    #custo = 2
-    custo = 1 + len(indice.buckets[indice.funcao_hash(chave)].entries) / 2
+    if entry is not None:
+        custo = 1
+    else:
+        custo = 0
     fim = perf_counter()
     return {"entry": entry, "custo": custo, "tempo": fim - inicio}
 
@@ -79,6 +80,7 @@ def calcular_estatisticas(indice: HashIndex, total_entradas: int) -> dict[str, a
     '''
     colisoes = sum(len(bucket.entries) - 1 for bucket in indice.buckets if len(bucket.entries) > 1)
     overflows = sum(len(bucket.entries) - bucket.max_tuplas for bucket in indice.buckets if len(bucket.entries) > bucket.max_tuplas)
+    #overflows = sum(1 for bucket in indice.buckets if len(bucket.entries) > bucket.max_tuplas)
     taxa_colisao = (colisoes / total_entradas) * 100 if total_entradas else 0
     taxa_overflow = (overflows / total_entradas) * 100 if total_entradas else 0
     return {"taxaColisao": taxa_colisao, "taxaOverflow": taxa_overflow}
