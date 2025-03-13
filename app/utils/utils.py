@@ -64,14 +64,12 @@ def calcular_estatisticas(indice: HashIndex, total_entradas: int) -> dict[str, a
     '''
         Calcular as estatísticas do índice Hash, incluindo taxa de colisões e taxa de overflows.
     '''
-    colisoes = sum(
-        len(bucket.entries) - 1 + len(bucket.overflow_entries)
-        for bucket in indice.buckets if len(bucket.entries) > 1 or len(bucket.overflow_entries) > 0
-    )
+    
+    colisoes = sum(bucket.collisions for bucket in indice.buckets)
 
-    overflows = sum(len(bucket.overflow_entries) for bucket in indice.buckets)
+    overflows = sum(bucket.overflow for bucket in indice.buckets)
 
     taxa_colisao = (colisoes / total_entradas) * 100 if total_entradas else 0
-    taxa_overflow = (overflows / total_entradas) * 100 if total_entradas else 0
+    taxa_overflow = (overflows / indice.num_buckets) * 100 if indice.num_buckets else 0
 
     return {"taxaColisao": taxa_colisao, "taxaOverflow": taxa_overflow}
