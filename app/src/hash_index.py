@@ -5,10 +5,10 @@ from dataclasses import dataclass, field
 class HashIndex:
     num_buckets: int
     bucket_size: int
-    buckets: list[Bucket]= field(init=False)
+    buckets: list[Bucket] = field(init=False)
     total_colisoes: int = 0
     total_overflow: int = 0
-    
+
     def __post_init__(self):
         self.buckets = [Bucket(self.bucket_size) for _ in range(self.num_buckets)]
 
@@ -23,16 +23,18 @@ class HashIndex:
         bucket = self.buckets[indice]
 
         if len(bucket.entries) > 0:
-            self.total_colisoes += 1
-        
-        bucket.adicionar_entrada(chave, pagina)
+            self.total_colisoes += 1  # Conta colisão sempre que um bucket já possui elementos
 
-        if bucket.has_overflow():
-            self.total_overflow += 1
+        if len(bucket.entries) < bucket.max_tuplas:
+            bucket.adicionar_entrada(chave, pagina)
+        else:
+            bucket.adicionar_overflow(chave, pagina)
+            self.total_colisoes += 1  # Conta colisões também no bucket de overflow
+            self.total_overflow += 1  # Mantém a contagem de overflow
 
     def buscar(self, chave):
         indice = self.funcao_hash(chave)
-        for entry in self.buckets[indice].entries:
+        for entry in self.buckets[indice].entries + self.buckets[indice].overflow_entries:
             if entry["chave"] == chave:
                 return entry
         return None

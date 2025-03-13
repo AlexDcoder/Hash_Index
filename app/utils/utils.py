@@ -3,22 +3,19 @@ from src.hash_index import HashIndex
 from time import perf_counter
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 import math
+
 def calcular_numero_buckets(num_tuplas: int, num_tuplas_bucket: int) -> int:
     '''
-        Calcular o número de buckets necessários para a criação do índice hash,
-        considerando o número de tuplas e o número de tuplas por bucket.
+        Calcular o número de buckets necessários para a criação do índice hash.
     '''
     if num_tuplas == 0:
-        return 1  #Pelo menos um bucket deve existir
+        return 1  # Pelo menos um bucket deve existir
 
     return math.ceil(num_tuplas / num_tuplas_bucket)
 
-    #total_buckets = (num_tuplas // num_tuplas_bucket) + 1
-    #return  total_buckets if total_buckets % 1 == 0 else math.ceil(total_buckets)
-
 def dividir_em_paginas(palavras: UploadedFile, tamanho_pagina: int) -> list[Page]:
     '''
-        Usar informações do arquivo e criar uma lista de páginas com um tamanho específico
+        Criar uma lista de páginas a partir do arquivo carregado.
     '''
     paginas = []
     numero_pagina = 1
@@ -28,12 +25,9 @@ def dividir_em_paginas(palavras: UploadedFile, tamanho_pagina: int) -> list[Page
         numero_pagina += 1
     return paginas
 
-def construir_indice(
-    paginas: UploadedFile, num_buckets: int, 
-    bucket_size: int) -> HashIndex:
+def construir_indice(paginas: UploadedFile, num_buckets: int, bucket_size: int) -> HashIndex:
     '''
-        Criar a estrutura do índice Hash com base nas informações do arquivo e
-        do formulário.
+        Criar a estrutura do índice Hash com base nas informações do arquivo.
     '''
     indice = HashIndex(num_buckets, bucket_size)
     for pagina in paginas:
@@ -43,24 +37,17 @@ def construir_indice(
 
 def buscar_com_indice(indice: HashIndex, chave: str) -> dict[str, any]:
     '''
-        Buscar a chave na estrutura do índice Hash, retornando qual a entrada,
-        sendo ela a palavra e a página dessa palavra, o cutos e o tempo de 
-        busca
+        Buscar a chave na estrutura do índice Hash e retornar o custo e o tempo de busca.
     '''
     inicio = perf_counter()
     entry = indice.buscar(chave)
-    if entry is not None:
-        custo = 1
-    else:
-        custo = 0
+    custo = 1 if entry is not None else 0
     fim = perf_counter()
     return {"entry": entry, "custo": custo, "tempo": fim - inicio}
 
 def table_scan(paginas: UploadedFile, chave: str) -> dict[str, any]:
     '''
-        Realizar um table scan na lista de páginas, percorrendo cada página
-        e verificando se a chave está presente na página. Retorna qual a página
-        a chave foi encontrada, o custo e o tempo de busca.
+        Realizar um table scan na lista de páginas e retornar estatísticas da busca.
     '''
     inicio = perf_counter()
     custo = 0
@@ -75,12 +62,16 @@ def table_scan(paginas: UploadedFile, chave: str) -> dict[str, any]:
 
 def calcular_estatisticas(indice: HashIndex, total_entradas: int) -> dict[str, any]:
     '''
-        Calcular as estatísticas do índice Hash, incluindo a taxa de colisões e a
-        taxa de overflows.
+        Calcular as estatísticas do índice Hash, incluindo taxa de colisões e taxa de overflows.
     '''
-    colisoes = sum(len(bucket.entries) - 1 for bucket in indice.buckets if len(bucket.entries) > 1)
-    overflows = sum(len(bucket.entries) - bucket.max_tuplas for bucket in indice.buckets if len(bucket.entries) > bucket.max_tuplas)
-    #overflows = sum(1 for bucket in indice.buckets if len(bucket.entries) > bucket.max_tuplas)
+    colisoes = sum(
+        len(bucket.entries) - 1 + len(bucket.overflow_entries)
+        for bucket in indice.buckets if len(bucket.entries) > 1 or len(bucket.overflow_entries) > 0
+    )
+
+    overflows = sum(len(bucket.overflow_entries) for bucket in indice.buckets)
+
     taxa_colisao = (colisoes / total_entradas) * 100 if total_entradas else 0
     taxa_overflow = (overflows / total_entradas) * 100 if total_entradas else 0
+
     return {"taxaColisao": taxa_colisao, "taxaOverflow": taxa_overflow}
