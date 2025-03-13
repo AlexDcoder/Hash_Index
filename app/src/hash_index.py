@@ -1,40 +1,34 @@
 from src.bucket import Bucket
-from dataclasses import dataclass, field
 
-@dataclass
 class HashIndex:
     num_buckets: int
     bucket_size: int
-    buckets: list[Bucket] = field(init=False)
-    total_colisoes: int = 0
-    total_overflow: int = 0
+    buckets: list[Bucket]
 
-    def __post_init__(self):
+    def __init__(self, num_buckets: int, bucket_size: int):
+        self.num_buckets = num_buckets
+        self.bucket_size = bucket_size
         self.buckets = [Bucket(self.bucket_size) for _ in range(self.num_buckets)]
 
     def funcao_hash(self, chave): 
-        primo_base = 31
-        primo_modulo = 1000003
-        hash_value = sum(primo_base * [ord(c)**7 for c in chave]) % primo_modulo
+        # matrículas 2216986 2214674 2214667 221462 2218935
+        # https://www.wolframalpha.com/input?i=next+prime+after+2216986221467422146672214622218935
+        hash_value = 2216986_2214674_2214667_221462_22189_63
+        for idx, char in enumerate(chave):
+            idx = idx + 1
+            char = ord(char)
+            hash_value = idx * (char * hash_value) + hash_value
         return hash_value % self.num_buckets
 
-    def adicionar(self, chave, pagina):
+    def adicionar(self, chave: str, pagina: int):
         indice = self.funcao_hash(chave)
         bucket = self.buckets[indice]
+        bucket.adicionar(chave, pagina)
 
-        if len(bucket.entries) > 0:
-            self.total_colisoes += 1  # Conta colisão sempre que um bucket já possui elementos
-
-        if len(bucket.entries) < bucket.max_tuplas:
-            bucket.adicionar_entrada(chave, pagina)
-        else:
-            bucket.adicionar_overflow(chave, pagina)
-            self.total_colisoes += 1  # Conta colisões também no bucket de overflow
-            self.total_overflow += 1  # Mantém a contagem de overflow
-
-    def buscar(self, chave):
-        indice = self.funcao_hash(chave)
-        for entry in self.buckets[indice].entries + self.buckets[indice].overflow_entries:
-            if entry["chave"] == chave:
-                return entry
+    def buscar(self, busca) -> int | None:
+        indice = self.funcao_hash(busca)
+        bucket = self.buckets[indice]
+        for (chave, pagina) in bucket.entries.items():
+            if chave == busca:
+                return pagina
         return None

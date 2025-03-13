@@ -69,7 +69,7 @@ if submit:
     
     with st.sidebar:
         if busca['entry']:
-            st.success(f"Chave encontrada na página {busca['entry']['pagina']} ✅")
+            st.success(f"Chave encontrada na página {busca['entry']} ✅")
         else:
             st.error("Chave não encontrada ❌")
             encontrado = False

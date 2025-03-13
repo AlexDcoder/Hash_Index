@@ -1,17 +1,62 @@
-from dataclasses import dataclass, field
 from typing import Any
 
-@dataclass
 class Bucket:
-    max_tuplas: int  # Número máximo de tuplas permitidas no bucket
-    entries: list[dict[str, Any]] = field(default_factory=list)  # Entradas principais
-    overflow_entries: list[dict[str, Any]] = field(default_factory=list)  # Lista de overflow
+    max_tuplas: int
+    entries: dict[str, Any]
+    next_bucket: "Bucket | None"
 
-    def adicionar_entrada(self, chave, pagina):
-        self.entries.append({"chave": chave, "pagina": pagina})
+    def __init__(self, max_tuplas):
+        self.max_tuplas = max_tuplas
+        self.entries = {}
+        self.next_bucket = None
 
-    def adicionar_overflow(self, chave, pagina):
-        self.overflow_entries.append({"chave": chave, "pagina": pagina})  # Encadeamento separado
+    @property
+    def overflow(self):
+        
+        n_overflow = 0
+        current = self
+        
+        while True:
+            
+            if current.next_bucket != None:
+                
+                current = current.next_bucket
+                n_overflow += 1
+        
+            else:
+            
+                return n_overflow
 
-    def has_overflow(self):
-        return len(self.entries) > self.max_tuplas or len(self.overflow_entries) > 0
+    @property
+    def collisions(self):
+        
+        n_collisions = 0
+        current = self
+        
+        while True:
+            
+            if current.next_bucket != None:
+                
+                current = current.next_bucket
+                n_collisions += len(current.entries)
+        
+            else:
+            
+                return n_collisions
+            
+    def adicionar(self, chave, pagina):
+        
+        current = self
+        
+        while True:
+            
+            if len(current.entries) <= current.max_tuplas:
+                break
+            
+            if current.next_bucket == None:
+                current.next_bucket = Bucket(current.max_tuplas)
+
+            if current.next_bucket != None:
+                current = current.next_bucket
+            
+        current.entries[chave] = pagina
